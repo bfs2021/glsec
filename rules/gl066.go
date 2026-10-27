@@ -89,7 +89,7 @@ func checkDockerAuthConfig(node *yaml.Node, file string) []finding.Finding {
 // dockerAuthCredentialFields lists the JSON members of a registry entry that
 // carry credentials; the registry key itself is a variable in the usual
 // runtime-expanded form and is not inspected.
-var dockerAuthCredentialFields = []string{"username", "password", "auth"}
+var dockerAuthCredentialFields = []string{"username", "password", "auth", "identitytoken", "registrytoken"}
 
 // dockerAuthCredentialsAreVariables reports whether every credential value in
 // an inline DOCKER_AUTH_CONFIG document is a variable reference ($VAR or

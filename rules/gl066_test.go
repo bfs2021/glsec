@@ -180,3 +180,33 @@ variables:
 		t.Fatalf("expected 1 finding for an auths document with no credential field, got %d", len(f))
 	}
 }
+
+func TestGL066_TokenFieldsFromVariables_NoFinding(t *testing.T) {
+	f := findings066(t, `
+variables:
+  DOCKER_AUTH_CONFIG: '{"auths":{"reg.example.com":{"identitytoken":"${CI_IDENTITY_TOKEN}","registrytoken":"${CI_REGISTRY_TOKEN}"}}}'
+`)
+	if len(f) != 0 {
+		t.Errorf("expected no finding when token fields are variable references, got %d", len(f))
+	}
+}
+
+func TestGL066_LiteralIdentityTokenStillReported(t *testing.T) {
+	f := findings066(t, `
+variables:
+  DOCKER_AUTH_CONFIG: '{"auths":{"reg.example.com":{"username":"${CI_REGISTRY_USER}","password":"${CI_REGISTRY_PASSWORD}","identitytoken":"eyJhbGciOiJSUzI1NiJ9.literal"}}}'
+`)
+	if len(f) != 1 {
+		t.Fatalf("expected 1 finding when identitytoken is a literal, got %d", len(f))
+	}
+}
+
+func TestGL066_LiteralRegistryTokenStillReported(t *testing.T) {
+	f := findings066(t, `
+variables:
+  DOCKER_AUTH_CONFIG: '{"auths":{"reg.example.com":{"registrytoken":"literal-token"}}}'
+`)
+	if len(f) != 1 {
+		t.Fatalf("expected 1 finding when registrytoken is a literal, got %d", len(f))
+	}
+}
