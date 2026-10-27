@@ -420,7 +420,7 @@ func TestScalarContentLine(t *testing.T) {
 func TestParseFileNamesAReadFailureOnce(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "pipeline.yml")
-	if err := os.Mkdir(path, 0o755); err != nil {
+	if err := os.Mkdir(path, 0o750); err != nil {
 		t.Fatalf("create a directory where the file should be: %v", err)
 	}
 
