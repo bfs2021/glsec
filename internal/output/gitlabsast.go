@@ -4,6 +4,7 @@
 package output
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -127,9 +128,14 @@ func WriteGitLabSAST(w io.Writer, findings []finding.Finding, meta GitLabSASTMet
 	for _, f := range findings {
 		report.Vulnerabilities = append(report.Vulnerabilities, gitlabSASTVuln(f, meta))
 	}
-	enc := json.NewEncoder(w)
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
-	return enc.Encode(report)
+	if err := enc.Encode(report); err != nil {
+		return err
+	}
+	_, err := io.WriteString(w, escapeBidiJSON(buf.String()))
+	return err
 }
 
 func gitlabSASTVuln(f finding.Finding, meta GitLabSASTMeta) gitlabSASTFinding {
@@ -140,12 +146,12 @@ func gitlabSASTVuln(f finding.Finding, meta GitLabSASTMeta) gitlabSASTFinding {
 			name += ": " + title
 		}
 	}
-	// The message, job and path come from the scanned file; GitLab shows
-	// them in its UI, so control and bidi characters are escaped as in the
-	// terminal output.
-	description := Sanitize(f.Message)
+	// The message, job and path come from the scanned file. JSON already
+	// escapes control characters; the bidi ones are escaped after encoding
+	// so the report stays round-trippable (see escapeBidiJSON).
+	description := f.Message
 	if f.Job != "" {
-		description += " (job: " + Sanitize(f.Job) + ")"
+		description += " (job: " + f.Job + ")"
 	}
 	// The first identifier is the primary one: GitLab groups and tracks
 	// findings by it.
@@ -182,6 +188,6 @@ func gitlabSASTVuln(f finding.Finding, meta GitLabSASTMeta) gitlabSASTFinding {
 		Severity:    gitlabSASTSeverity(f.Severity),
 		Solution:    solution,
 		Identifiers: ids,
-		Location:    gitlabSASTLocation{File: Sanitize(f.File), StartLine: line},
+		Location:    gitlabSASTLocation{File: f.File, StartLine: line},
 	}
 }

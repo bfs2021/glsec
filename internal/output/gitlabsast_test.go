@@ -103,8 +103,13 @@ func TestWriteGitLabSAST_Fields(t *testing.T) {
 	if v[3].Identifiers[0].URL != "https://www.shellcheck.net/wiki/SC2086" {
 		t.Errorf("ShellCheck identifier = %+v", v[3].Identifiers[0])
 	}
-	if strings.ContainsAny(v[4].Description, "\n\u202e") || !strings.Contains(v[4].Description, "\\u202e") {
-		t.Errorf("control and bidi characters not escaped: %q", v[4].Description)
+	if v[4].Description != "pipe\nto sh (job: a\u202eb)" {
+		t.Errorf("description round trip changed: %q", v[4].Description)
+	}
+	for _, r := range []rune{'\u202a', '\u202b', '\u202c', '\u202d', '\u202e', '\u2066', '\u2067', '\u2068', '\u2069', '\u200e', '\u200f', '\u061c'} {
+		if strings.ContainsRune(buf.String(), r) {
+			t.Errorf("raw GitLab SAST output contains bidi rune U+%04X", r)
+		}
 	}
 	seen := map[string]bool{}
 	for _, x := range v {
@@ -117,6 +122,33 @@ func TestWriteGitLabSAST_Fields(t *testing.T) {
 	_ = WriteGitLabSAST(&again, findings, meta)
 	if again.String() != buf.String() {
 		t.Error("report not deterministic")
+	}
+}
+
+func TestWriteGitLabSAST_BidiRoundTrip(t *testing.T) {
+	job := "job\u202etset"
+	file := "\u2066dir/file.yml"
+	msg := "a\u202bb\u2066c\u200ed\u061ce"
+	findings := []finding.Finding{
+		{RuleID: "GL001", Severity: finding.Error, Job: job, File: file, Line: 1, Message: msg},
+	}
+	var buf bytes.Buffer
+	if err := WriteGitLabSAST(&buf, findings, GitLabSASTMeta{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range []rune{'\u202a', '\u202b', '\u202c', '\u202d', '\u202e', '\u2066', '\u2067', '\u2068', '\u2069', '\u200e', '\u200f', '\u061c'} {
+		if strings.ContainsRune(buf.String(), r) {
+			t.Errorf("raw GitLab SAST output contains bidi rune U+%04X", r)
+		}
+	}
+	var report gitlabSASTReport
+	if err := json.Unmarshal(buf.Bytes(), &report); err != nil {
+		t.Fatalf("invalid GitLab SAST JSON: %v", err)
+	}
+	v := report.Vulnerabilities[0]
+	wantDescription := msg + " (job: " + job + ")"
+	if v.Description != wantDescription || v.Location.File != file {
+		t.Errorf("round trip changed values: got description=%q file=%q", v.Description, v.Location.File)
 	}
 }
 
