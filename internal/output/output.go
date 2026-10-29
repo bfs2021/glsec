@@ -601,9 +601,7 @@ func writeSARIF(w io.Writer, findings []finding.Finding, tool SARIFTool,
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(log); err != nil {
-		return err
-	}
+	_ = enc.Encode(log) // a bytes.Buffer never fails and sarifLog always marshals
 	_, err := io.WriteString(w, escapeBidiJSON(buf.String()))
 	return err
 }
@@ -709,9 +707,7 @@ func writeCodeClimate(w io.Writer, findings []finding.Finding) error {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(out); err != nil {
-		return err
-	}
+	_ = enc.Encode(out) // a bytes.Buffer never fails and codeClimateIssue always marshals
 	_, err := io.WriteString(w, escapeBidiJSON(buf.String()))
 	return err
 }

@@ -125,7 +125,7 @@
     {
       "id": "bba4a752-fb67-58b2-823b-b2920d00fd3d",
       "name": "GL011: Download and execute",
-      "description": "pipe\nto sh (job: a\u202eb)",
+      "description": "pipe\\x0ato sh (job: a\\u202eb)",
       "severity": "High",
       "solution": "See https://glsec.github.io/rules/GL011/",
       "identifiers": [

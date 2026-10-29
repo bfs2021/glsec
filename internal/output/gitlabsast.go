@@ -131,9 +131,7 @@ func WriteGitLabSAST(w io.Writer, findings []finding.Finding, meta GitLabSASTMet
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(report); err != nil {
-		return err
-	}
+	_ = enc.Encode(report) // a bytes.Buffer never fails and the report always marshals
 	_, err := io.WriteString(w, escapeBidiJSON(buf.String()))
 	return err
 }
@@ -146,12 +144,13 @@ func gitlabSASTVuln(f finding.Finding, meta GitLabSASTMeta) gitlabSASTFinding {
 			name += ": " + title
 		}
 	}
-	// The message, job and path come from the scanned file. JSON already
-	// escapes control characters; the bidi ones are escaped after encoding
-	// so the report stays round-trippable (see escapeBidiJSON).
-	description := f.Message
+	// The message, job and path come from the scanned file; GitLab shows
+	// them in its UI, so control and bidi characters are escaped as in the
+	// terminal output. GitLab decodes the JSON before rendering, so escaping
+	// the report bytes alone would still show the raw characters.
+	description := Sanitize(f.Message)
 	if f.Job != "" {
-		description += " (job: " + f.Job + ")"
+		description += " (job: " + Sanitize(f.Job) + ")"
 	}
 	// The first identifier is the primary one: GitLab groups and tracks
 	// findings by it.
@@ -188,6 +187,6 @@ func gitlabSASTVuln(f finding.Finding, meta GitLabSASTMeta) gitlabSASTFinding {
 		Severity:    gitlabSASTSeverity(f.Severity),
 		Solution:    solution,
 		Identifiers: ids,
-		Location:    gitlabSASTLocation{File: f.File, StartLine: line},
+		Location:    gitlabSASTLocation{File: Sanitize(f.File), StartLine: line},
 	}
 }
