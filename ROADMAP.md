@@ -9,15 +9,13 @@ This is where glsec is heading over the next 12 months (until October 2027). It 
 - Pinning checks for `run:` function and step references once GitLab Functions leaves the experiment stage (#470).
 
 **Analysis**
-- Apply `extends:` and `default:` inheritance across all rules, not only where a rule needs it today, so findings and suppressions follow what GitLab actually runs.
-- Scan local files pulled in with `include: local:`, the same way local child pipelines are scanned today.
+- Finish `extends:` and `default:` inheritance: most rules that read inherited keys follow `extends:` within a file and `default:` today; still missing are `default:` in the deep merge of `extends:`, GL001, and templates that come from another included file, so findings and suppressions follow what GitLab actually runs.
 
 **Usability**
 - `--fix` for findings with a mechanical, safe fix, such as pinning an image to a digest.
 - Custom rules written in a simple YAML format, with a command to test them against example files.
 
 **Project**
-- A second maintainer, so that reviews and releases don't depend on one person.
 - Signed release tags, in addition to the signed release artifacts.
 
 ## Not planned
